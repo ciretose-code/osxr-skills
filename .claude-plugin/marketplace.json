@@ -1,0 +1,11 @@
+{
+  "name": "osxr-skills",
+  "owner": { "name": "ciretose" },
+  "plugins": [
+    {
+      "name": "osxr",
+      "source": "./",
+      "description": "Developer ID signing, notarization, and GitHub releases for open-source macOS apps."
+    }
+  ]
+}

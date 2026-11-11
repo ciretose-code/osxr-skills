@@ -1,0 +1,8 @@
+{
+  "name": "osxr",
+  "version": "0.1.0",
+  "description": "Developer ID + notarize + GitHub release skills for open-source macOS apps — backed by one shared release toolkit.",
+  "author": { "name": "ciretose" },
+  "license": "MIT",
+  "keywords": ["macos", "developer-id", "notarize", "github-release", "screenshots", "dmg"]
+}

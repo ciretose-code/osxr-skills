@@ -1,0 +1,18 @@
+{
+  "scheme": "AppName",
+  "project": "AppName.xcodeproj",
+  "appName": "App Name",
+  "notaryProfile": "ciretose-notary",
+  "versionSource": "agvtool",
+  "dmgBackground": "Assets/DMGBackground.png",
+  "releaseBranch": "main",
+  "runTests": false,
+  "minisignPublicKeyURL": "https://ciretose.com/ciretose.pub",
+
+  "_comments": {
+    "versionSource": "agvtool | plist | xcodegen",
+    "infoPlist": "Required when versionSource is plist (and recommended for xcodegen verify).",
+    "projectYml": "Required when versionSource is xcodegen (default: project.yml).",
+    "commitPaths": "Optional extra paths to git-add with the release bump."
+  }
+}
