@@ -19,6 +19,17 @@ TOOLKIT_DIR="$(cd "$(dirname "$0")" && pwd)"
 die() { echo "error: $*" >&2; exit 1; }
 step() { echo ""; echo "▶ $*"; }
 
+print_help() {
+  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+# --help must work without osxr.json / from any cwd
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help) print_help; exit 0 ;;
+  esac
+done
+
 # ── Locate osxr.json ───────────────────────────────────────────────────────────
 find_config() {
   if [ -n "${OSXR_CONFIG:-}" ]; then
@@ -117,10 +128,7 @@ for arg in "$@"; do
   case "$arg" in
     --apply) APPLY=true ;;
     --dry-run) APPLY=false ;;
-    -h|--help)
-      sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
-      exit 0
-      ;;
+    -h|--help) print_help; exit 0 ;;
     -*) die "unknown option ${arg}" ;;
     *) NEW_VERSION="$arg" ;;
   esac
