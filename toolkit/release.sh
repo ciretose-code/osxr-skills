@@ -1,17 +1,7 @@
 #!/bin/bash
 # toolkit/release.sh — Archive, Developer ID export, notarize, DMG, minisign, GitHub release.
-#
-# Driven by osxr.json at the project root (walks up from cwd). Secrets live in
-# ~/.config/osxr/ — never in the repo. See skills/setup/SKILL.md.
-#
-# Usage (from anywhere inside a project with osxr.json):
-#   $T/release.sh              # dry run: build + sign + DMG; no notarize/publish/push
-#   $T/release.sh --apply      # full release
-#   $T/release.sh 0.2 --apply  # set marketing version, bump build, release
-#
-# Env overrides:
-#   NOTARY_PROFILE, MINISIGN_SECRET_KEY, OSXR_CONFIG
-#
+# Driven by osxr.json. Secrets in ~/.config/osxr/. See skills/setup/SKILL.md.
+# Run --help for usage.
 set -euo pipefail
 
 TOOLKIT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -20,13 +10,41 @@ die() { echo "error: $*" >&2; exit 1; }
 step() { echo ""; echo "▶ $*"; }
 
 print_help() {
-  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+  cat <<'EOF'
+release.sh — Archive, Developer ID export, notarize, DMG, minisign, GitHub release.
+
+Driven by osxr.json at the project root (walks up from cwd). Secrets live in
+~/.config/osxr/ — never in the repo. See /osxr:setup.
+
+Usage (from anywhere inside a project with osxr.json):
+  release.sh                 # dry run: build + sign + DMG; no notarize/publish/push
+  release.sh --apply         # full release
+  release.sh 0.2 --apply     # set marketing version, bump build, release
+  release.sh --dry-run       # same as default (explicit)
+
+Options:
+  [VERSION]       Optional marketing version (e.g. 1.2). Build always bumps.
+  --apply         Notarize, staple, minisign, commit, push, gh release create
+  --dry-run       Build + sign + DMG only (default)
+  -h, --help      Show this help and exit (works without osxr.json)
+
+Environment overrides:
+  NOTARY_PROFILE       Keychain profile (default: osxr.json notaryProfile)
+  MINISIGN_SECRET_KEY  Path to minisign secret (default: ~/.config/osxr/minisign.key)
+  OSXR_CONFIG          Path to osxr.json (skip walk-up from cwd)
+EOF
 }
 
-# --help must work without osxr.json / from any cwd
+# Parse argv before looking for osxr.json so --help / bad flags work anywhere.
+APPLY=false
+NEW_VERSION=""
 for arg in "$@"; do
   case "$arg" in
+    --apply) APPLY=true ;;
+    --dry-run) APPLY=false ;;
     -h|--help) print_help; exit 0 ;;
+    -*) die "unknown option ${arg}" ;;
+    *) NEW_VERSION="$arg" ;;
   esac
 done
 
@@ -120,19 +138,6 @@ STAGING_DMG="build/staging.dmg"
 # Volume names can't have spaces reliably for Finder scripting — strip them.
 MOUNT_SAFE_NAME="${APP_NAME// /}"
 MOUNT_DIR="/Volumes/${MOUNT_SAFE_NAME}-staging"
-
-APPLY=false
-NEW_VERSION=""
-
-for arg in "$@"; do
-  case "$arg" in
-    --apply) APPLY=true ;;
-    --dry-run) APPLY=false ;;
-    -h|--help) print_help; exit 0 ;;
-    -*) die "unknown option ${arg}" ;;
-    *) NEW_VERSION="$arg" ;;
-  esac
-done
 
 cleanup() {
   if [ -d "$MOUNT_DIR" ]; then

@@ -37,6 +37,7 @@ In each project, run `/osxr:setup`.
 | `release.sh` | Full pipeline. **Dry run by default**; `--apply` notarizes and publishes |
 
 ```sh
+$T/release.sh --help    # flags and env overrides
 $T/release.sh           # build + sign + DMG only
 $T/release.sh --apply   # notarize, minisign, gh release, push
 $T/release.sh 1.2 --apply
