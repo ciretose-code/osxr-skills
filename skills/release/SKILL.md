@@ -9,7 +9,7 @@ description: Use when shipping a Developer ID signed macOS app to GitHub — bum
 
 `$T/release.sh` is the whole pipeline. `$T` =
 `<this skill's base directory>/../../toolkit`. Requires osxr:setup (`osxr.json`
-+ `~/.config/osxr/` credentials).
++ `~/.config/osxr/` credentials). Flags: `$T/release.sh --help`.
 
 ## Workflow
 
