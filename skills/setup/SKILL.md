@@ -55,15 +55,42 @@ security find-identity -v -p codesigning | grep "Developer ID Application"
 
 ### 3. Notary API key + keychain profile (once per machine)
 
-You need an App Store Connect API key (App Manager role is enough): Key ID,
-Issuer ID, and the downloaded `.p8`.
+Notarization talks to Apple with an **App Store Connect API key**. You are not
+submitting to the Mac App Store here — the same key type is what `notarytool`
+uses. One key covers every app on the team; do not mint a key per app.
+
+**Already have a key for asc-skills?** Reuse it. Copy or symlink the `.p8` into
+`~/.config/osxr/` (or point `notarytool` at `~/.config/asc/AuthKey_….p8`) and
+skip to *Store the keychain profile* below. Same Issuer ID + Key ID.
+
+**Greenfield — create the key** (Account Holder or Admin on the Apple Developer
+team; a regular Developer role cannot generate Team Keys):
+
+1. Sign in to
+   [App Store Connect → Users and Access → Integrations → App Store Connect API](https://appstoreconnect.apple.com/access/integrations/api).
+   If you do not see **Integrations**, your Apple ID is not Account Holder/Admin
+   — ask someone who is, or use a different team membership.
+2. Note the **Issuer ID** at the top of the page (one per team).
+3. Under **Team Keys**, click **Generate API Key** (or **+**). Name it something
+   like `osxr-notary`. Access: **App Manager** is enough for notarization.
+   Generate.
+4. Copy the key's **Key ID**. Click **Download API Key** and save the
+   `AuthKey_<KEY_ID>.p8` — Apple shows the download **once**. If you lose it,
+   revoke and generate a new key.
+5. Park the private key on this machine only:
 
 ```sh
-# Keep the private key only under ~/.config/osxr/
+mkdir -p ~/.config/osxr && chmod 700 ~/.config/osxr
 mv ~/Downloads/AuthKey_<KEY_ID>.p8 ~/.config/osxr/
 chmod 600 ~/.config/osxr/AuthKey_<KEY_ID>.p8
+```
 
-# One shared profile for every app on this machine
+Never put the `.p8` in a repo, cloud sync of a git working tree, or chat logs.
+
+**Store the keychain profile** (so `notarytool` does not need the `.p8` path on
+every run):
+
+```sh
 xcrun notarytool store-credentials "osxr-notary" \
   --key ~/.config/osxr/AuthKey_<KEY_ID>.p8 \
   --key-id <KEY_ID> \
@@ -76,7 +103,8 @@ Verify:
 xcrun notarytool history --keychain-profile osxr-notary
 ```
 
-Put `"notaryProfile": "osxr-notary"` in each app's `osxr.json`. Legacy per-app
+A successful (even empty) history listing means the profile works. Put
+`"notaryProfile": "osxr-notary"` in each app's `osxr.json`. Legacy per-app
 profile names still work if you keep them in config.
 
 ### 4. Minisign keypair (release checksum signing)
@@ -269,6 +297,9 @@ Legacy `NOTARY_PROFILE=…` and `MINISIGN_SECRET_KEY=…` env overrides still wo
 |---|---|
 | Only an Apple Development cert | Step 2 — Developer ID Application |
 | `.p8` or `.key` still in the repo | Move to `~/.config/osxr/`, chmod 600 |
+| Can't see Integrations / Generate API Key | Need Account Holder or Admin on the team |
+| Lost the `.p8` after download | Revoke that key; generate a new one (Apple won't re-offer it) |
+| 401 / notary profile fails | Wrong Issuer ID or Key ID; or `.p8` doesn't match that Key ID |
 | Missing / unpublished `minisign.pub` | Step 4 — generate, host URL, set `minisignPublicKeyURL` |
 | Empty `DEVELOPMENT_TEAM` | Step 5 — local xcconfig |
 | Wrong `versionSource` | agvtool writes pbxproj; xcodegen apps must use `xcodegen` or the bump vanishes |
