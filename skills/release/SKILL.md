@@ -63,7 +63,8 @@ Tag format: `v{MARKETING_VERSION}.{BUILD}`.
 ## Env overrides
 
 - `NOTARY_PROFILE` — keychain profile name
-- `MINISIGN_SECRET_KEY` — default `~/.config/osxr/ciretose.key`
+- `MINISIGN_SECRET_KEY` — default `~/.config/osxr/minisign.key` (or `osxr.json` → `minisignSecretKey`)
+- `minisignPublicKeyURL` in `osxr.json` — required for `--apply` (your published `.pub`)
 - `OSXR_CONFIG` — path to `osxr.json` if not walking up from cwd
 
 ## Common mistakes

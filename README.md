@@ -16,14 +16,15 @@ For App Store Connect, use [asc-skills](https://github.com/ciretose-code/asc-ski
 /plugin install osxr@osxr-skills
 ```
 
-Then, once per machine: put the notary `.p8` and minisign secret in
-`~/.config/osxr/` (see `/osxr:setup`). In each project, run `/osxr:setup`.
+Then, once per machine: put the notary `.p8` and **your** minisign secret in
+`~/.config/osxr/` (see `/osxr:setup` — including how to generate a keypair).
+In each project, run `/osxr:setup`.
 
 ## Skills
 
 | Skill | For |
 |---|---|
-| `/osxr:setup` | Credentials under `~/.config/osxr/`, Developer ID cert, `osxr.json`, migrating `Scripts/release.sh` |
+| `/osxr:setup` | Credentials under `~/.config/osxr/`, Developer ID cert, minisign keypair, `osxr.json`, migrating `Scripts/release.sh` |
 | `/osxr:release` | Archive, notarize, DMG, minisign, GitHub release |
 | `/osxr:screenshots` | README / GitHub Mac screenshots (not App Store) |
 
@@ -46,8 +47,9 @@ $T/release.sh 1.2 --apply
 | Need | Location |
 |---|---|
 | Notary API `.p8` | `~/.config/osxr/AuthKey_<KEY_ID>.p8` |
-| Notary profile | keychain, e.g. `ciretose-notary` |
-| minisign secret | `~/.config/osxr/ciretose.key` |
+| Notary profile | keychain, e.g. `osxr-notary` |
+| minisign secret | `~/.config/osxr/minisign.key` (you generate this) |
+| minisign public | host `minisign.pub` at a URL; set `minisignPublicKeyURL` in `osxr.json` |
 | Team ID | gitignored local xcconfig in each app |
 | GitHub | `gh auth` |
 

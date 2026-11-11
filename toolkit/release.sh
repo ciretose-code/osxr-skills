@@ -15,7 +15,6 @@
 set -euo pipefail
 
 TOOLKIT_DIR="$(cd "$(dirname "$0")" && pwd)"
-MINISIGN_SECRET_KEY="${MINISIGN_SECRET_KEY:-$HOME/.config/osxr/ciretose.key}"
 
 die() { echo "error: $*" >&2; exit 1; }
 step() { echo ""; echo "▶ $*"; }
@@ -85,14 +84,23 @@ PY
 SCHEME="$(json_get scheme)" || die "osxr.json missing required key: scheme"
 PROJECT="$(json_get project)" || die "osxr.json missing required key: project"
 APP_NAME="$(json_get appName)" || die "osxr.json missing required key: appName"
-NOTARY_PROFILE="${NOTARY_PROFILE:-$(json_get notaryProfile ciretose-notary)}"
+NOTARY_PROFILE="${NOTARY_PROFILE:-$(json_get notaryProfile osxr-notary)}"
 VERSION_SOURCE="$(json_get versionSource agvtool)"
 RELEASE_BRANCH="$(json_get releaseBranch main)"
 RUN_TESTS="$(json_get runTests false)"
 DMG_BACKGROUND="$(json_get dmgBackground "")"
-MINISIGN_PUB_URL="$(json_get minisignPublicKeyURL https://ciretose.com/ciretose.pub)"
+MINISIGN_PUB_URL="$(json_get minisignPublicKeyURL "")"
 PROJECT_YML="$(json_get projectYml project.yml)"
 INFO_PLIST="$(json_get infoPlist "")"
+# Secret path: env > osxr.json > ~/.config/osxr/minisign.key
+if [ -z "${MINISIGN_SECRET_KEY:-}" ]; then
+  MINISIGN_SECRET_KEY="$(json_get minisignSecretKey "")"
+  [ -z "$MINISIGN_SECRET_KEY" ] && MINISIGN_SECRET_KEY="$HOME/.config/osxr/minisign.key"
+  # Expand leading ~/
+  case "$MINISIGN_SECRET_KEY" in
+    "~/"*) MINISIGN_SECRET_KEY="$HOME/${MINISIGN_SECRET_KEY#~/}" ;;
+  esac
+fi
 
 ARCHIVE_PATH="build/${SCHEME}.xcarchive"
 EXPORT_PATH="build/export"
@@ -135,7 +143,8 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
 done
 
 [ -f "$MINISIGN_SECRET_KEY" ] || die "minisign secret key not found: ${MINISIGN_SECRET_KEY}
-       Place it at ~/.config/osxr/ciretose.key (see /osxr:setup)."
+       Generate your own with minisign -G (see /osxr:setup). Default path:
+       ~/.config/osxr/minisign.key"
 
 [ -f "$PROJECT" ] || [ -d "$PROJECT" ] || die "project not found: ${PROJECT}"
 
@@ -414,6 +423,9 @@ xcrun stapler validate "$DMG_PATH"
 spctl --assess --type execute --verbose=2 "$APP_PATH" 2>&1 | tail -2
 
 # ── 10. Minisign ───────────────────────────────────────────────────────────────
+[ -n "$MINISIGN_PUB_URL" ] || die "osxr.json missing minisignPublicKeyURL.
+       Publish your minisign.pub over HTTPS and set the URL (see /osxr:setup)."
+
 step "Signing SHA256SUMS with minisign"
 SUMS_PATH="build/SHA256SUMS"
 (
@@ -441,10 +453,15 @@ gh release create "$TAG" \
   --notes "$(cat <<EOF
 SHA-256: ${CHECKSUM}
 
-### Verify with Hash/Check
+### Verify checksums
 
 Download \`SHA256SUMS\` and \`SHA256SUMS.minisig\` alongside the DMG.
 Public key: ${MINISIGN_PUB_URL}
+
+\`\`\`
+minisign -Vm SHA256SUMS -p minisign.pub
+shasum -a 256 -c SHA256SUMS
+\`\`\`
 EOF
 )" \
   --generate-notes
